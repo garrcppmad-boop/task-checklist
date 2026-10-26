@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>taskcheck（モック）</title>
+<!--
+  要件定義書（requirements.md）をもとにした画面モック。
+  ・1ファイルで全画面（画面一覧 No.1〜11 ＋ 403）を確認できる
+  ・データはブラウザ上だけで動く（再読み込みで初期状態に戻る）
+  ・URL の # 以降で画面を切り替える（例：mock.html#/tasks）
+-->
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --border: #e2e5ea;
+    --text: #1f2933;
+    --muted: #6b7280;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --danger: #dc2626;
+    --overdue: #dc2626;
+    --soon: #d97706;
+    --done: #9ca3af;
+    --success-bg: #ecfdf5;
+    --success-text: #047857;
+    --error-bg: #fef2f2;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* モックであることの表示 */
+  .mock-bar {
+    background: #111827; color: #e5e7eb; font-size: 12px;
+    padding: 6px 16px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center;
+  }
+  .mock-bar a { color: #93c5fd; }
+
+  /* ヘッダー */
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+  }
+  .header-inner {
+    max-width: 1000px; margin: 0 auto; padding: 12px 16px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px;
+  }
+  .logo { font-weight: 700; font-size: 18px; color: var(--text); }
+  .logo:hover { text-decoration: none; }
+  nav { display: flex; flex-wrap: wrap; gap: 4px 16px; flex: 1; font-size: 14px; }
+  nav a { color: var(--muted); }
+  nav a.active { color: var(--primary); font-weight: 700; }
+  .user-menu { font-size: 14px; color: var(--muted); display: flex; gap: 12px; align-items: center; }
+
+  main { max-width: 1000px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 16px; }
+  h2 { font-size: 17px; margin: 24px 0 12px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+  }
+  .narrow { max-width: 440px; margin: 0 auto; }
+
+  /* フラッシュメッセージ */
+  .flash {
+    background: var(--success-bg); color: var(--success-text);
+    border: 1px solid #a7f3d0; border-radius: var(--radius);
+    padding: 10px 14px; margin-bottom: 16px; font-size: 14px;
+  }
+
+  /* フォーム */
+  label { display: block; font-weight: 600; font-size: 14px; margin: 14px 0 4px; }
+  .required::after { content: " 必須"; color: var(--danger); font-size: 11px; font-weight: 400; }
+  input[type=text], input[type=email], input[type=password], input[type=date], input[type=search], select, textarea {
+    width: 100%; padding: 9px 10px; font: inherit; font-size: 15px;
+    border: 1px solid var(--border); border-radius: 6px; background: #fff;
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  .help { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .error { font-size: 13px; color: var(--danger); margin-top: 4px; }
+  input.has-error, textarea.has-error, select.has-error { border-color: var(--danger); background: var(--error-bg); }
+
+  .btn {
+    display: inline-block; padding: 9px 16px; font: inherit; font-size: 14px; font-weight: 600;
+    border-radius: 6px; border: 1px solid var(--border); background: #fff; color: var(--text);
+    cursor: pointer;
+  }
+  .btn:hover { text-decoration: none; background: #f3f4f6; }
+  .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-danger { color: var(--danger); border-color: #fecaca; }
+  .btn-danger:hover { background: var(--error-bg); }
+  .btn-block { width: 100%; margin-top: 20px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; align-items: center; }
+
+  /* 検索・絞り込み */
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .toolbar input { flex: 1 1 220px; }
+  .toolbar select { flex: 0 1 180px; }
+
+  /* 業務一覧 */
+  .task-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .task-item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 14px; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center;
+  }
+  .task-title { font-weight: 700; font-size: 15px; }
+  .task-meta { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .task-item.is-done .task-title a { color: var(--done); }
+  .empty { text-align: center; color: var(--muted); padding: 40px 16px; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); }
+  .pagination { display: flex; justify-content: center; gap: 4px; margin-top: 16px; font-size: 14px; }
+  .pagination span { padding: 4px 10px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); }
+  .pagination .current { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  /* 期限の表示（F-13） */
+  .due-overdue { color: var(--overdue); font-weight: 700; }
+  .due-soon { color: var(--soon); font-weight: 700; }
+  .due-normal { color: var(--text); }
+  .due-done { color: var(--done); }
+
+  /* ステータス */
+  .status { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--border); }
+  .status-todo { background: #f3f4f6; }
+  .status-doing { background: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
+  .status-done { background: #f9fafb; color: var(--done); }
+
+  /* ブックマーク（F-14） */
+  .bookmark {
+    border: 1px solid var(--border); background: #fff; border-radius: 999px;
+    padding: 4px 12px; font-size: 13px; cursor: pointer; white-space: nowrap;
+  }
+  .bookmark.on { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+
+  /* 詳細 */
+  .detail-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: flex-start; }
+  .detail-head h1 { margin: 0; }
+  dl.props { display: grid; grid-template-columns: 100px 1fr; gap: 8px 12px; margin: 16px 0; font-size: 14px; }
+  dl.props dt { color: var(--muted); }
+  dl.props dd { margin: 0; }
+  .description { white-space: pre-wrap; margin: 0; }
+  .image-box {
+    margin-top: 16px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border);
+    max-width: 480px;
+  }
+  .image-box img { display: block; width: 100%; }
+  .image-placeholder {
+    height: 200px; display: flex; align-items: center; justify-content: center;
+    background: repeating-linear-gradient(45deg, #f3f4f6, #f3f4f6 10px, #e5e7eb 10px, #e5e7eb 20px);
+    color: var(--muted); font-size: 13px;
+  }
+  .comment { border-top: 1px solid var(--border); padding: 12px 0; }
+  .comment:first-child { border-top: none; padding-top: 0; }
+  .comment-head { font-size: 13px; color: var(--muted); }
+  .comment-head strong { color: var(--text); margin-right: 8px; }
+  .comment p { margin: 4px 0 0; white-space: pre-wrap; }
+
+  /* トップページ */
+  .hero { text-align: center; padding: 48px 16px; }
+  .hero h1 { font-size: 28px; }
+  .hero p { color: var(--muted); }
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 32px; text-align: left; }
+  .features .card { padding: 16px; font-size: 14px; }
+  .features strong { display: block; margin-bottom: 4px; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+
+  @media (max-width: 600px) {
+    .task-item { grid-template-columns: 1fr; }
+    .task-item .bookmark { justify-self: start; }
+    dl.props { grid-template-columns: 80px 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mock-bar">
+  <span>モック（requirements.md の画面一覧 No.1〜11）</span>
+  <span>ログイン中：<span id="mock-user"></span></span>
+  <a href="#" id="switch-user">別のユーザーに切り替え（権限の確認用）</a>
+</div>
+
+<header>
+  <div class="header-inner" id="header"></div>
+</header>
+
+<main id="app"></main>
+
+<script>
+// ---------------------------------------------------------------------------
+// データ（requirements.md「3-3. 主なデータ」に合わせる）
+// ---------------------------------------------------------------------------
+const TEAMS = [
+  { id: 1, name: '第1営業' },
+  { id: 2, name: '第2営業' },
+  { id: 3, name: '営業事務' },
+];
+const USERS = [
+  { id: 1, team_id: 1, name: '田中 太郎', email: 'tanaka@example.com' },
+  { id: 2, team_id: 1, name: '鈴木 花子', email: 'suzuki@example.com' },
+  { id: 3, team_id: 1, name: '佐藤 次郎', email: 'sato@example.com' },
+  { id: 4, team_id: 2, name: '高橋 美咲', email: 'takahashi@example.com' },
+];
+const STATUSES = { todo: '未着手', doing: '進行中', done: '完了' };
+
+// 期限は「今日から何日後か」で持ち、色分けが常に確認できるようにする
+function daysFromToday(n) {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+let tasks = [
+  { id: 1, user_id: 1, title: 'A社 見積書の作成', description: '来期の保守契約の見積書を作る。\n前年の金額をベースに、作業範囲の追加分を反映する。', due_date: daysFromToday(-2), status: 'doing', image: null, created_at: daysFromToday(-10) },
+  { id: 2, user_id: 2, title: 'B社 訪問の資料準備', description: '新商品の紹介資料を10部印刷する。', due_date: daysFromToday(1), status: 'todo', image: null, created_at: daysFromToday(-5) },
+  { id: 3, user_id: 3, title: '月次売上レポートの集計', description: '営業事務から届いた数字をまとめて、部長に提出する。', due_date: daysFromToday(3), status: 'doing', image: null, created_at: daysFromToday(-7) },
+  { id: 4, user_id: 1, title: 'C社 契約書の確認', description: '法務からの修正点を確認して、先方に返送する。', due_date: daysFromToday(10), status: 'todo', image: null, created_at: daysFromToday(-1) },
+  { id: 5, user_id: 2, title: '展示会ブースの申し込み', description: '', due_date: daysFromToday(-5), status: 'done', image: null, created_at: daysFromToday(-20) },
+  { id: 6, user_id: 3, title: 'D社 名刺情報の登録', description: '展示会で受け取った名刺を顧客リストに入力する。', due_date: daysFromToday(6), status: 'todo', image: null, created_at: daysFromToday(-3) },
+  { id: 7, user_id: 4, title: '（第2営業）E社 提案書', description: '他のチームの業務。第1営業のメンバーには表示されない。', due_date: daysFromToday(2), status: 'doing', image: null, created_at: daysFromToday(-2) },
+];
+let comments = [
+  { id: 1, task_id: 1, user_id: 2, body: '前年の見積書は共有フォルダの「2025」にあります。', created_at: daysFromToday(-3) },
+  { id: 2, task_id: 1, user_id: 1, body: 'ありがとうございます！確認します。', created_at: daysFromToday(-2) },
+];
+let bookmarks = new Set([2]); // 業務 ID（ログイン中のユーザーの分）
+
+let currentUserId = 1;
+let loggedIn = true;
+let flashMessage = '';
+let nextTaskId = 8;
+let nextCommentId = 3;
+
+const currentUser = () => USERS.find(u => u.id === currentUserId);
+const userOf = id => USERS.find(u => u.id === id);
+const teamOf = id => TEAMS.find(t => t.id === id);
+
+// ---------------------------------------------------------------------------
+// 共通の部品
+// ---------------------------------------------------------------------------
+// XSS 対策（Blade の {{ }} と同じくエスケープして出力する）
+function e(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// F-13 期限による表示の変化
+function dueState(task) {
+  if (task.status === 'done') return { cls: 'due-done', mark: '✓', label: '完了' };
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const diff = Math.round((new Date(task.due_date + 'T00:00:00') - today) / 86400000);
+  if (diff < 0) return { cls: 'due-overdue', mark: '⚠', label: '期限切れ' };
+  if (diff <= 3) return { cls: 'due-soon', mark: '⏰', label: '期限間近' };
+  return { cls: 'due-normal', mark: '', label: '' };
+}
+
+function formatDate(ymd) {
+  const [y, m, d] = ymd.split('-');
+  return `${y}/${m}/${d}`;
+}
+
+function dueHtml(task) {
+  const s = dueState(task);
+  return `<span class="${s.cls}">${s.mark ? s.mark + ' ' : ''}${formatDate(task.due_date)}${s.label && s.label !== '完了' ? `（${s.label}）` : ''}</span>`;
+}
+
+function statusHtml(status) {
+  return `<span class="status status-${status}">${STATUSES[status]}</span>`;
+}
+
+function bookmarkButton(taskId) {
+  const on = bookmarks.has(taskId);
+  return `<button type="button" class="bookmark ${on ? 'on' : ''}" data-bookmark="${taskId}" aria-pressed="${on}">${on ? '★ ブックマーク済み' : '☆ ブックマーク'}</button>`;
+}
+
+function flashHtml() {
+  if (!flashMessage) return '';
+  const html = `<div class="flash">${e(flashMessage)}</div>`;
+  flashMessage = '';
+  return html;
+}
+
+function setFlash(message) { flashMessage = message; }
+
+// 同じチームの業務だけ（他チームの業務は表示しない）
+function teamTasks() {
+  const teamId = currentUser().team_id;
+  return tasks.filter(t => userOf(t.user_id).team_id === teamId);
+}
+
+function sortByDue(list) {
+  return [...list].sort((a, b) => a.due_date.localeCompare(b.due_date));
+}
+
+function taskListHtml(list, emptyMessage) {
+  if (list.length === 0) return `<div class="empty">${e(emptyMessage)}</div>`;
+  const items = sortByDue(list).map(t => `
+    <li class="task-item ${t.status === 'done' ? 'is-done' : ''}">
+      <div>
+        <div class="task-title"><a href="#/tasks/${t.id}">${e(t.title)}</a></div>
+        <div class="task-meta">
+          <span>担当：${e(userOf(t.user_id).name)}</span>
+          <span>期限：${dueHtml(t)}</span>
+          ${statusHtml(t.status)}
+          <span>💬 ${comments.filter(c => c.task_id === t.id).length}</span>
+        </div>
+      </div>
+      ${bookmarkButton(t.id)}
+    </li>`).join('');
+  return `
+    <ul class="task-list">${items}</ul>
+    <div class="pagination"><span>‹</span><span class="current">1</span><span>›</span></div>
+    <p class="help" style="text-align:center">1ページ20件で表示（モックでは全件表示）</p>`;
+}
+
+const LEGEND = `
+  <div class="legend">
+    <span class="due-overdue">⚠ 期限切れ</span>
+    <span class="due-soon">⏰ 期限間近（3日以内）</span>
+    <span class="due-normal">通常（4日以上）</span>
+    <span class="due-done">✓ 完了</span>
+  </div>`;
+
+// ---------------------------------------------------------------------------
+// 画面
+// ---------------------------------------------------------------------------
+const pages = {
+
+  // No.1 トップページ
+  top() {
+    return `
+      <section class="hero">
+        <h1>taskcheck</h1>
+        <p style="margin-top:-8px">チーム業務共有ボード</p>
+        <p>チームの「誰が・何を・いつまでに」を共有し、業務ごとにやりとりできます。</p>
+        <div class="actions" style="justify-content:center">
+          <a class="btn btn-primary" href="#/register">会員登録</a>
+          <a class="btn" href="#/login">ログイン</a>
+        </div>
+        <div class="features">
+          <div class="card"><strong>業務を一覧で共有</strong>チーム全員が抱えている業務を一目で確認できます。</div>
+          <div class="card"><strong>期限を色で見分ける</strong>期限切れは赤、期限間近はオレンジで表示します。</div>
+          <div class="card"><strong>業務ごとにコメント</strong>相談や確認を、その業務に残せます。</div>
+        </div>
+      </section>`;
+  },
+
+  // No.2 会員登録（F-01）
+  register() {
+    const options = TEAMS.map(t => `<option value="${t.id}">${e(t.name)}</option>`).join('');
+    return `
+      <div class="card narrow">
+        <h1>会員登録</h1>
+        <form data-form="register" novalidate>
+          <label class="required" for="r-name">名前</label>
+          <input type="text" id="r-name" name="name">
+          <label class="required" for="r-email">メールアドレス</label>
+          <input type="email" id="r-email" name="email" placeholder="tanaka@example.com">
+          <label class="required" for="r-team">所属チーム</label>
+          <select id="r-team" name="team"><option value="">選択してください</option>${options}</select>
+          <label class="required" for="r-pass">パスワード</label>
+          <input type="password" id="r-pass" name="password">
+          <div class="help">8文字以上</div>
+          <label class="required" for="r-pass2">パスワード（確認）</label>
+          <input type="password" id="r-pass2" name="password_confirmation">
+          <button class="btn btn-primary btn-block" type="submit">登録する</button>
+        </form>
+        <p class="help" style="text-align:center;margin-top:16px">登録済みの方は <a href="#/login">ログイン</a></p>
+      </div>`;
+  },
+
+  // No.3 ログイン（F-02）
+  login() {
+    return `
+      <div class="card narrow">
+        <h1>ログイン</h1>
+        <form data-form="login" novalidate>
+          <label for="l-email">メールアドレス</label>
+          <input type="email" id="l-email" name="email" value="tanaka@example.com">
+          <label for="l-pass">パスワード</label>
+          <input type="password" id="l-pass" name="password" value="password">
+          <label style="font-weight:400"><input type="checkbox"> ログインしたままにする</label>
+          <button class="btn btn-primary btn-block" type="submit">ログイン</button>
+        </form>
+        <p class="help" style="text-align:center;margin-top:16px">
+          <a href="#/forgot-password">パスワードを忘れた方</a>　／　<a href="#/register">会員登録</a>
+        </p>
+      </div>`;
+  },
+
+  // No.4 パスワードリセット（F-03）
+  forgot() {
+    return `
+      <div class="card narrow">
+        ${flashHtml()}
+        <h1>パスワードリセット</h1>
+        <p class="help">登録したメールアドレスに、パスワード再設定用のリンクを送ります。</p>
+        <form data-form="forgot" novalidate>
+          <label class="required" for="f-email">メールアドレス</label>
+          <input type="email" id="f-email" name="email">
+          <button class="btn btn-primary btn-block" type="submit">再設定用のリンクを送る</button>
+        </form>
+        <p class="help" style="text-align:center;margin-top:16px"><a href="#/login">ログインに戻る</a></p>
+      </div>`;
+  },
+
+  // No.5 チームの業務一覧（F-05・F-11・F-12・F-13・F-14）
+  tasks(params) {
+    const keyword = params.get('q') || '';
+    const filter = params.get('filter') || '';
+    let list = teamTasks();
+    if (keyword) {
+      list = list.filter(t => t.title.includes(keyword) || t.description.includes(keyword));
+    }
+    if (filter === 'overdue' || filter === 'soon') {
+      list = list.filter(t => dueState(t).cls === `due-${filter}`);
+    } else if (filter) {
+      list = list.filter(t => t.status === filter);
+    }
+    const opt = (v, label) => `<option value="${v}" ${filter === v ? 'selected' : ''}>${label}</option>`;
+    return `
+      ${flashHtml()}
+      <h1>${e(teamOf(currentUser().team_id).name)}の業務一覧</h1>
+      <form class="toolbar" data-form="search">
+        <input type="search" name="q" value="${e(keyword)}" placeholder="タイトル・説明で検索">
+        <select name="filter">
+          ${opt('', 'すべて')}
+          ${opt('overdue', '期限切れ')}
+          ${opt('soon', '期限間近（3日以内）')}
+          ${opt('todo', '未着手')}
+          ${opt('doing', '進行中')}
+          ${opt('done', '完了')}
+        </select>
+        <button class="btn" type="submit">検索</button>
+      </form>
+      ${LEGEND}
+      ${taskListHtml(list, '該当する業務がありません')}`;
+  },
+
+  // No.6 自分の業務一覧（F-06）
+  mine() {
+    const list = tasks.filter(t => t.user_id === currentUserId);
+    return `
+      ${flashHtml()}
+      <div class="detail-head">
+        <h1>自分の業務一覧</h1>
+        <a class="btn btn-primary" href="#/tasks/create">＋ 新規投稿</a>
+      </div>
+      <div style="height:16px"></div>
+      ${LEGEND}
+      ${taskListHtml(list, 'まだ業務を投稿していません')}`;
+  },
+
+  // No.7 ブックマーク一覧（F-16）
+  bookmarks() {
+    const list = teamTasks().filter(t => bookmarks.has(t.id));
+    return `
+      <h1>ブックマーク一覧</h1>
+      ${LEGEND}
+      ${taskListHtml(list, 'ブックマークした業務はありません')}`;
+  },
+
+  // No.8 業務の新規投稿（F-04・F-09）
+  create() {
+    return `
+      <div class="card" style="max-width:640px">
+        <h1>業務の新規投稿</h1>
+        ${taskFormHtml({ title: '', description: '', due_date: '', status: 'todo' }, 'create')}
+      </div>`;
+  },
+
+  // No.9 業務の詳細（F-07・F-10・F-14・F-15）
+  show(id) {
+    const t = tasks.find(x => x.id === id);
+    if (!t) return pages.notFound();
+    if (userOf(t.user_id).team_id !== currentUser().team_id) return pages.forbidden();
+    const isOwner = t.user_id === currentUserId;
+    const list = comments.filter(c => c.task_id === t.id);
+    const commentsHtml = list.length
+      ? list.map(c => `
+          <div class="comment">
+            <div class="comment-head"><strong>${e(userOf(c.user_id).name)}</strong>${formatDate(c.created_at)}</div>
+            <p>${e(c.body)}</p>
+          </div>`).join('')
+      : '<p class="help">まだコメントはありません</p>';
+    return `
+      ${flashHtml()}
+      <div class="card">
+        <div class="detail-head">
+          <h1>${e(t.title)}</h1>
+          ${bookmarkButton(t.id)}
+        </div>
+        <dl class="props">
+          <dt>担当者</dt><dd>${e(userOf(t.user_id).name)}</dd>
+          <dt>期限</dt><dd>${dueHtml(t)}</dd>
+          <dt>ステータス</dt><dd>${statusHtml(t.status)}</dd>
+          <dt>投稿日</dt><dd>${formatDate(t.created_at)}</dd>
+        </dl>
+        <p class="description">${t.description ? e(t.description) : '<span class="help">説明はありません</span>'}</p>
+        <div class="image-box">
+          ${t.image ? `<img src="${t.image}" alt="添付画像">` : '<div class="image-placeholder">添付画像（jpg / png / webp・2MBまで）</div>'}
+        </div>
+        ${isOwner ? `
+          <div class="actions">
+            <a class="btn" href="#/tasks/${t.id}/edit">編集</a>
+            <button class="btn btn-danger" type="button" data-delete="${t.id}">削除</button>
+          </div>` : '<p class="help" style="margin-top:16px">編集・削除は投稿者だけができます</p>'}
+      </div>
+
+      <h2>コメント（${list.length}）</h2>
+      <div class="card">
+        ${commentsHtml}
+        <form data-form="comment" data-task="${t.id}" novalidate style="margin-top:16px">
+          <label class="required" for="c-body">コメント</label>
+          <textarea id="c-body" name="body" placeholder="質問や相談を書き込む（500文字まで）"></textarea>
+          <div class="actions" style="margin-top:8px"><button class="btn btn-primary" type="submit">コメントする</button></div>
+        </form>
+      </div>
+      <p style="margin-top:16px"><a href="#/tasks">← 業務一覧に戻る</a></p>`;
+  },
+
+  // No.10 業務の編集（F-08・F-15）
+  edit(id) {
+    const t = tasks.find(x => x.id === id);
+    if (!t) return pages.notFound();
+    if (t.user_id !== currentUserId) return pages.forbidden();
+    return `
+      <div class="card" style="max-width:640px">
+        <h1>業務の編集</h1>
+        ${taskFormHtml(t, 'edit')}
+      </div>`;
+  },
+
+  // No.11 プロフィール（Breeze）
+  profile() {
+    const u = currentUser();
+    return `
+      <h1>プロフィール</h1>
+      <div class="card" style="max-width:640px">
+        <h2 style="margin-top:0">プロフィール情報</h2>
+        <label for="p-name">名前</label>
+        <input type="text" id="p-name" value="${e(u.name)}">
+        <label for="p-email">メールアドレス</label>
+        <input type="email" id="p-email" value="${e(u.email)}">
+        <label>所属チーム</label>
+        <p style="margin:0">${e(teamOf(u.team_id).name)}</p>
+        <div class="actions"><button class="btn btn-primary" type="button">保存</button></div>
+      </div>
+      <div class="card" style="max-width:640px;margin-top:16px">
+        <h2 style="margin-top:0">パスワードの変更</h2>
+        <label>現在のパスワード</label><input type="password">
+        <label>新しいパスワード</label><input type="password">
+        <label>新しいパスワード（確認）</label><input type="password">
+        <div class="actions"><button class="btn btn-primary" type="button">保存</button></div>
+      </div>`;
+  },
+
+  forbidden() {
+    return `
+      <div class="card narrow" style="text-align:center">
+        <h1>403</h1>
+        <p>この操作を行う権限がありません。</p>
+        <a href="#/tasks">業務一覧に戻る</a>
+      </div>`;
+  },
+
+  notFound() {
+    return `
+      <div class="card narrow" style="text-align:center">
+        <h1>404</h1>
+        <p>ページが見つかりません。</p>
+        <a href="#/tasks">業務一覧に戻る</a>
+      </div>`;
+  },
+};
+
+// 新規投稿・編集で共通のフォーム
+function taskFormHtml(t, mode) {
+  const statusOptions = Object.entries(STATUSES)
+    .map(([v, label]) => `<option value="${v}" ${t.status === v ? 'selected' : ''}>${label}</option>`).join('');
+  const cancel = mode === 'edit' ? `#/tasks/${t.id}` : '#/tasks';
+  return `
+    <form data-form="${mode}" ${mode === 'edit' ? `data-task="${t.id}"` : ''} novalidate>
+      <div class="field">
+        <label class="required" for="t-title">タイトル</label>
+        <input type="text" id="t-title" name="title" value="${e(t.title)}" maxlength="200">
+        <div class="help">100文字まで</div>
+      </div>
+      <div class="field">
+        <label for="t-desc">説明</label>
+        <textarea id="t-desc" name="description">${e(t.description)}</textarea>
+      </div>
+      <div class="field">
+        <label class="required" for="t-due">期限</label>
+        <input type="date" id="t-due" name="due_date" value="${e(t.due_date)}">
+      </div>
+      <div class="field">
+        <label class="required" for="t-status">ステータス</label>
+        <select id="t-status" name="status">${statusOptions}</select>
+      </div>
+      <div class="field">
+        <label for="t-image">画像</label>
+        <input type="file" id="t-image" name="image" accept=".jpg,.jpeg,.png,.webp">
+        <div class="help">jpg / png / webp、2MBまで（1枚）${mode === 'edit' && t.image ? '。選ぶと今の画像と差し替えます' : ''}</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" type="submit">${mode === 'edit' ? '更新する' : '投稿する'}</button>
+        <a class="btn" href="${cancel}">キャンセル</a>
+      </div>
+    </form>`;
+}
+
+// ---------------------------------------------------------------------------
+// ルーティング（routes/web.php の代わり）
+// ---------------------------------------------------------------------------
+const GUEST_ONLY = ['top', 'register', 'login', 'forgot'];
+
+function resolve() {
+  const hash = location.hash.replace(/^#/, '') || '/';
+  const [path, query] = hash.split('?');
+  const params = new URLSearchParams(query || '');
+  let m;
+  if (path === '/') return { name: 'top' };
+  if (path === '/register') return { name: 'register' };
+  if (path === '/login') return { name: 'login' };
+  if (path === '/forgot-password') return { name: 'forgot' };
+  if (path === '/tasks') return { name: 'tasks', arg: params };
+  if (path === '/tasks/mine') return { name: 'mine' };
+  if (path === '/tasks/create') return { name: 'create' };
+  if (path === '/bookmarks') return { name: 'bookmarks' };
+  if (path === '/profile') return { name: 'profile' };
+  if ((m = path.match(/^\/tasks\/(\d+)$/))) return { name: 'show', arg: Number(m[1]) };
+  if ((m = path.match(/^\/tasks\/(\d+)\/edit$/))) return { name: 'edit', arg: Number(m[1]) };
+  return { name: 'notFound' };
+}
+
+function render() {
+  let route = resolve();
+  // auth ミドルウェア：未ログインならログイン画面へ
+  if (!loggedIn && !GUEST_ONLY.includes(route.name)) {
+    location.hash = '#/login';
+    return;
+  }
+  // ログイン済みでトップを開いたら業務一覧へ
+  if (loggedIn && route.name === 'top') {
+    location.hash = '#/tasks';
+    return;
+  }
+  renderHeader(route.name);
+  document.getElementById('app').innerHTML = pages[route.name](route.arg);
+  document.getElementById('mock-user').textContent = loggedIn
+    ? `${currentUser().name}（${teamOf(currentUser().team_id).name}）`
+    : '未ログイン';
+  window.scrollTo(0, 0);
+}
+
+function renderHeader(active) {
+  const header = document.getElementById('header');
+  if (!loggedIn) {
+    header.innerHTML = `
+      <a class="logo" href="#/">taskcheck</a>
+      <nav></nav>
+      <div class="user-menu"><a href="#/login">ログイン</a><a href="#/register">会員登録</a></div>`;
+    return;
+  }
+  const link = (href, name, label) => `<a href="${href}" class="${active === name ? 'active' : ''}">${label}</a>`;
+  header.innerHTML = `
+    <a class="logo" href="#/tasks">taskcheck</a>
+    <nav>
+      ${link('#/tasks', 'tasks', 'チームの業務')}
+      ${link('#/tasks/mine', 'mine', '自分の業務')}
+      ${link('#/bookmarks', 'bookmarks', 'ブックマーク')}
+      ${link('#/tasks/create', 'create', '＋ 新規投稿')}
+    </nav>
+    <div class="user-menu">
+      ${link('#/profile', 'profile', e(currentUser().name))}
+      <a href="#" data-logout>ログアウト</a>
+    </div>`;
+}
+
+// ---------------------------------------------------------------------------
+// 操作
+// ---------------------------------------------------------------------------
+function showErrors(form, errors) {
+  form.querySelectorAll('.error').forEach(el => el.remove());
+  form.querySelectorAll('.has-error').forEach(el => el.classList.remove('has-error'));
+  Object.entries(errors).forEach(([name, message]) => {
+    const input = form.elements[name];
+    input.classList.add('has-error');
+    const div = document.createElement('div');
+    div.className = 'error';
+    div.textContent = message;
+    input.insertAdjacentElement('afterend', div);
+  });
+  return Object.keys(errors).length === 0;
+}
+
+function readImage(file) {
+  return new Promise(resolve => {
+    if (!file) return resolve(null);
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(file);
+  });
+}
+
+function validateTask(form) {
+  const errors = {};
+  const title = form.title.value.trim();
+  if (!title) errors.title = 'タイトルは必須です。';
+  else if (title.length > 100) errors.title = 'タイトルは100文字以内で入力してください。';
+  if (!form.due_date.value) errors.due_date = '期限は必須です。';
+  const file = form.image.files[0];
+  if (file) {
+    if (!/\.(jpe?g|png|webp)$/i.test(file.name)) errors.image = '画像は jpg / png / webp のファイルを選んでください。';
+    else if (file.size > 2 * 1024 * 1024) errors.image = '画像は2MB以下のファイルを選んでください。';
+  }
+  return errors;
+}
+
+document.addEventListener('submit', async ev => {
+  const form = ev.target;
+  const type = form.dataset.form;
+  if (!type) return;
+  ev.preventDefault();
+
+  if (type === 'search') {
+    const q = form.q.value.trim();
+    const filter = form.filter.value;
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (filter) params.set('filter', filter);
+    location.hash = '#/tasks' + (params.toString() ? '?' + params : '');
+    return;
+  }
+
+  if (type === 'login') {
+    const errors = {};
+    if (!form.email.value.trim()) errors.email = 'メールアドレスは必須です。';
+    if (!form.password.value) errors.password = 'パスワードは必須です。';
+    if (!showErrors(form, errors)) return;
+    loggedIn = true;
+    location.hash = '#/tasks';
+    return;
+  }
+
+  if (type === 'register') {
+    const errors = {};
+    if (!form.name.value.trim()) errors.name = '名前は必須です。';
+    const email = form.email.value.trim();
+    if (!email) errors.email = 'メールアドレスは必須です。';
+    else if (USERS.some(u => u.email === email)) errors.email = 'このメールアドレスはすでに登録されています。';
+    if (!form.team.value) errors.team = '所属チームを選んでください。';
+    if (form.password.value.length < 8) errors.password = 'パスワードは8文字以上で入力してください。';
+    else if (form.password.value !== form.password_confirmation.value) errors.password_confirmation = 'パスワードが一致しません。';
+    if (!showErrors(form, errors)) return;
+    const user = { id: USERS.length + 1, team_id: Number(form.team.value), name: form.name.value.trim(), email };
+    USERS.push(user);
+    currentUserId = user.id;
+    bookmarks = new Set();
+    loggedIn = true;
+    setFlash('会員登録が完了しました。');
+    location.hash = '#/tasks';
+    return;
+  }
+
+  if (type === 'forgot') {
+    if (!showErrors(form, form.email.value.trim() ? {} : { email: 'メールアドレスは必須です。' })) return;
+    setFlash('パスワード再設定用のリンクをメールで送りました。');
+    render();
+    return;
+  }
+
+  if (type === 'create' || type === 'edit') {
+    if (!showErrors(form, validateTask(form))) return;
+    const image = await readImage(form.image.files[0]);
+    const values = {
+      title: form.title.value.trim(),
+      description: form.description.value.trim(),
+      due_date: form.due_date.value,
+      status: form.status.value,
+    };
+    if (type === 'create') {
+      const task = { id: nextTaskId++, user_id: currentUserId, ...values, image, created_at: daysFromToday(0) };
+      tasks.push(task);
+      setFlash('投稿しました。');
+      location.hash = `#/tasks/${task.id}`;
+    } else {
+      const task = tasks.find(t => t.id === Number(form.dataset.task));
+      Object.assign(task, values);
+      if (image) task.image = image;
+      setFlash('更新しました。');
+      location.hash = `#/tasks/${task.id}`;
+    }
+    return;
+  }
+
+  if (type === 'comment') {
+    const body = form.body.value.trim();
+    const errors = {};
+    if (!body) errors.body = 'コメントを入力してください。';
+    else if (body.length > 500) errors.body = 'コメントは500文字以内で入力してください。';
+    if (!showErrors(form, errors)) return;
+    comments.push({ id: nextCommentId++, task_id: Number(form.dataset.task), user_id: currentUserId, body, created_at: daysFromToday(0) });
+    setFlash('コメントしました。');
+    render();
+  }
+});
+
+document.addEventListener('click', ev => {
+  // F-14 ブックマーク：画面を描き直さず、ボタンだけ切り替える（Ajax の代わり）
+  const bm = ev.target.closest('[data-bookmark]');
+  if (bm) {
+    const id = Number(bm.dataset.bookmark);
+    bookmarks.has(id) ? bookmarks.delete(id) : bookmarks.add(id);
+    bm.outerHTML = bookmarkButton(id);
+    return;
+  }
+
+  // F-08 削除（確認ダイアログ）
+  const del = ev.target.closest('[data-delete]');
+  if (del) {
+    if (!confirm('この業務を削除します。よろしいですか？')) return;
+    const id = Number(del.dataset.delete);
+    tasks = tasks.filter(t => t.id !== id);
+    comments = comments.filter(c => c.task_id !== id);
+    bookmarks.delete(id);
+    setFlash('削除しました。');
+    location.hash = '#/tasks/mine';
+    return;
+  }
+
+  if (ev.target.closest('[data-logout]')) {
+    ev.preventDefault();
+    loggedIn = false;
+    location.hash = '#/';
+    render();
+    return;
+  }
+
+  // モック用：同じチームの別ユーザーに切り替えて、編集ボタンの表示や 403 を確認する
+  if (ev.target.id === 'switch-user') {
+    ev.preventDefault();
+    if (!loggedIn) return;
+    currentUserId = currentUserId === 1 ? 2 : 1;
+    bookmarks = new Set();
+    render();
+  }
+});
+
+window.addEventListener('hashchange', render);
+render();
+</script>
+</body>
+</html>
