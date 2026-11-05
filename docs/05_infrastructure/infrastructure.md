@@ -73,6 +73,6 @@ flowchart LR
 
 | 項目 | 内容 |
 |---|---|
-| MySQL の用意 | Render のマネージド DB は PostgreSQL のため、MySQL は Render 上に別サービス（Private Service＋ディスク）として立てるか、外部の MySQL サービスを使う。どちらにするか決める |
+| MySQL の用意 | Render のマネージド DB は PostgreSQL のため、MySQL は **Render 上に Private Service（MySQL の Docker イメージ＋ディスク）として立てる**（Week 21 で決定）。外部には公開せず、アプリからだけ接続する |
 | Persistent Disk の制限 | ディスクを付けたサービスは、台数を増やせず、デプロイ中に短時間止まる。利用者30名程度なら問題ないが、利用者が増えたら S3 への移行（F-19）を検討する |
 | 料金 | Persistent Disk と Key Value は有料プランが必要。月額を確認する |

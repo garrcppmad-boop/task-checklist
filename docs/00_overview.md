@@ -146,6 +146,8 @@ users (N) >----< (N) tasks  [bookmarks: 中間テーブル]
 | 03 | ルーティング設計 | [03_routing-design/routing.md](./03_routing-design/routing.md) | 画面とURL・HTTPメソッド・コントローラー・権限の一覧 |
 | 04 | 見積もり | [04_estimation/workload.md](./04_estimation/workload.md)、[04_estimation/schedule.md](./04_estimation/schedule.md) | 工数見積もり（開発98時間＋バッファ25時間）、3週間のスケジュール |
 | 05 | インフラ構成 | [05_infrastructure/infrastructure.md](./05_infrastructure/infrastructure.md) | Render を使った公開環境の構成図 |
+| 06 | 技術選定 | [06_tech-selection/tech-selection.md](./06_tech-selection/tech-selection.md) | 使用技術一覧、デプロイ先の比較と選定理由 |
+| ― | 開発計画 | [sprint-plan.md](./sprint-plan.md) | 3スプリントの計画、ユーザーストーリーの優先順位 |
 
 ---
 
@@ -159,11 +161,13 @@ users (N) >----< (N) tasks  [bookmarks: 中間テーブル]
 
 詳しくは [04_estimation/schedule.md](./04_estimation/schedule.md) を参照。
 
-## 9. 未決事項（Week 21 の要件見直しで確定する）
+## 9. 決定事項（Week 21 の要件見直しで確定）
 
-| No | 内容 | 関係する設計 |
-|---|---|---|
-| 1 | 他のチームの業務も見られるようにするか（現在の設計は「同じチームだけ」） | ルーティング（権限）、TaskPolicy |
-| 2 | 削除した業務をあとで戻せるようにするか（論理削除にするか） | DB 設計（tasks に deleted_at を追加するか） |
-| 3 | 2MB を超えるスマホの写真の扱い（上限を上げるか、縮小するか） | 画像アップロード |
-| 4 | 公開環境の MySQL をどこに用意するか（Render 上に立てるか、外部サービスを使うか） | インフラ構成 |
+Week 20 までの未決事項を、次のように決めた。
+
+| No | 内容 | 決定 | 理由 | 関係する設計 |
+|---|---|---|---|---|
+| 1 | 他のチームの業務も見られるようにするか | **同じチームだけ**（今の設計のまま） | 他チームに見せたくない情報（取引先名など）があり、権限もシンプルに保てる | ルーティング（権限）、TaskPolicy |
+| 2 | 削除した業務をあとで戻せるようにするか | **戻せない（物理削除）** | 削除前に確認ダイアログを出すので誤操作は防げる。論理削除は検索・一覧の条件が増え、3週間の範囲を超える | DB 設計（`deleted_at` は追加しない） |
+| 3 | 2MB を超えるスマホの写真の扱い | **上限は 2MB のまま** | 縮小処理はライブラリの追加が必要。超えたときはエラーメッセージで小さい画像を選ぶよう案内する | 画像アップロード |
+| 4 | 公開環境の MySQL をどこに用意するか | **Render 上に Private Service として立てる** | アプリと同じ Render 内で通信でき、構成図どおり1か所で管理できる。データはディスクに保存する | インフラ構成 |
