@@ -8,7 +8,7 @@
 外部キーで参照されるテーブル（親）を先に作り、参照するテーブル（子）を後に作る。
 
 ```
-teams ──▶ users ──▶ tasks ──▶ comments
+teams ──▶ users ──▶ task_checklists ──▶ comments
                        └────▶ bookmarks
 ```
 
@@ -19,9 +19,9 @@ teams ──▶ users ──▶ tasks ──▶ comments
 | 3 | `0001_01_01_000002_create_jobs_table.php` | jobs・job_batches・failed_jobs | ― | Laravel（初期状態） |
 | 4 | `YYYY_MM_DD_000001_create_teams_table.php` | teams を作成 | ― | 自作 |
 | 5 | `YYYY_MM_DD_000002_add_team_id_to_users_table.php` | users に team_id を追加 | teams | 自作 |
-| 6 | `YYYY_MM_DD_000003_create_tasks_table.php` | tasks を作成 | users | 自作 |
-| 7 | `YYYY_MM_DD_000004_create_comments_table.php` | comments を作成 | tasks・users | 自作 |
-| 8 | `YYYY_MM_DD_000005_create_bookmarks_table.php` | bookmarks を作成 | users・tasks | 自作 |
+| 6 | `YYYY_MM_DD_000003_create_task_checklists_table.php` | task_checklists を作成 | users | 自作 |
+| 7 | `YYYY_MM_DD_000004_create_comments_table.php` | comments を作成 | task_checklists・users | 自作 |
+| 8 | `YYYY_MM_DD_000005_create_bookmarks_table.php` | bookmarks を作成 | users・task_checklists | 自作 |
 
 ### users の team_id を別のマイグレーションで追加する理由
 - Laravel の初期状態の users マイグレーション（1）は、teams（4）より先に実行される
@@ -37,7 +37,7 @@ teams ──▶ users ──▶ tasks ──▶ comments
 ```bash
 php artisan make:migration create_teams_table
 php artisan make:migration add_team_id_to_users_table --table=users
-php artisan make:migration create_tasks_table
+php artisan make:migration create_task_checklists_table
 php artisan make:migration create_comments_table
 php artisan make:migration create_bookmarks_table
 ```
@@ -72,10 +72,10 @@ Schema::table('users', function (Blueprint $table) {
   });
   ```
 
-### 6. create_tasks_table
+### 6. create_task_checklists_table
 
 ```php
-Schema::create('tasks', function (Blueprint $table) {
+Schema::create('task_checklists', function (Blueprint $table) {
     $table->id();
     $table->foreignId('user_id')->constrained()->cascadeOnDelete();
     $table->string('title', 100);
@@ -88,19 +88,19 @@ Schema::create('tasks', function (Blueprint $table) {
 ```
 - `due_date`：一覧の期限順の並び替え、期限切れ・期限間近の絞り込みに使う
 - `status`：ステータスでの絞り込みに使う
-- down: `Schema::dropIfExists('tasks');`
+- down: `Schema::dropIfExists('task_checklists');`
 
 ### 7. create_comments_table
 
 ```php
 Schema::create('comments', function (Blueprint $table) {
     $table->id();
-    $table->foreignId('task_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('task_checklist_id')->constrained()->cascadeOnDelete();
     $table->foreignId('user_id')->constrained()->cascadeOnDelete();
     $table->string('body', 500);
     $table->timestamps();
 
-    $table->index(['task_id', 'created_at']); // 詳細画面でコメントを古い順に表示
+    $table->index(['task_checklist_id', 'created_at']); // 詳細画面でコメントを古い順に表示
 });
 ```
 - 業務を削除すると、そのコメントも削除される（CASCADE）
@@ -112,13 +112,13 @@ Schema::create('comments', function (Blueprint $table) {
 Schema::create('bookmarks', function (Blueprint $table) {
     $table->id();
     $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-    $table->foreignId('task_id')->constrained()->cascadeOnDelete();
+    $table->foreignId('task_checklist_id')->constrained()->cascadeOnDelete();
     $table->timestamps();
 
-    $table->unique(['user_id', 'task_id']); // 同じ業務を二重にブックマークできない
+    $table->unique(['user_id', 'task_checklist_id']); // 同じ業務を二重にブックマークできない
 });
 ```
-- `unique(['user_id', 'task_id'])` は user_id で始まるインデックスも兼ねる。task_id 側は `constrained()` で自動的にインデックスが作られる
+- `unique(['user_id', 'task_checklist_id'])` は user_id で始まるインデックスも兼ねる。task_checklist_id 側は `constrained()` で自動的にインデックスが作られる
 - down: `Schema::dropIfExists('bookmarks');`
 
 ---
@@ -135,7 +135,7 @@ Schema::create('bookmarks', function (Blueprint $table) {
 |---|---|
 | `TeamFactory` | チーム名 |
 | `UserFactory` | Breeze の初期状態に team_id を追加 |
-| `TaskFactory` | 期限・ステータスをランダムに。`overdue()` `dueSoon()` `done()` の状態を用意（色分けのテスト用） |
+| `TaskChecklistFactory` | 期限・ステータスをランダムに。`overdue()` `dueSoon()` `done()` の状態を用意（色分けのテスト用） |
 | `CommentFactory` | 業務・ユーザー・本文 |
 
 ### DemoSeeder で用意するデータ
@@ -172,5 +172,5 @@ php artisan db:seed --class=TeamSeeder --force
 
 | 未決事項（00_overview.md） | 決まった場合のマイグレーション |
 |---|---|
-| 削除した業務を戻せるようにする | tasks に `softDeletes()`（deleted_at）を追加するマイグレーションを作る |
+| 削除した業務を戻せるようにする | task_checklists に `softDeletes()`（deleted_at）を追加するマイグレーションを作る |
 | 他のチームの業務も見られるようにする | テーブルの変更は不要（Policy の変更だけ） |

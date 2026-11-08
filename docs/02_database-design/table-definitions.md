@@ -52,7 +52,7 @@
 
 ---
 
-## テーブル: tasks（業務）
+## テーブル: task_checklists（業務）
 
 | カラム名 | 型 | NULL | デフォルト | 説明 |
 |--------------|-------------|------|-----------|-------------------|
@@ -86,7 +86,7 @@
 | カラム名 | 型 | NULL | デフォルト | 説明 |
 |--------------|-------------|------|-----------|-------------------|
 | id | BIGINT | NO | AUTO | コメントID（PK） |
-| task_id | BIGINT | NO | - | 業務ID（FK） |
+| task_checklist_id | BIGINT | NO | - | 業務ID（FK） |
 | user_id | BIGINT | NO | - | コメントしたユーザーID（FK） |
 | body | VARCHAR(500) | NO | - | コメント本文 |
 | created_at | TIMESTAMP | NO | CURRENT | 作成日時 |
@@ -94,36 +94,36 @@
 
 【インデックス】
 - PRIMARY KEY (id)
-- INDEX (task_id, created_at)（業務の詳細でコメントを古い順に表示）
+- INDEX (task_checklist_id, created_at)（業務の詳細でコメントを古い順に表示）
 - INDEX (user_id)
 
 【外部キー】
-- task_id REFERENCES tasks(id) ON DELETE CASCADE（業務を削除するとコメントも削除）
+- task_checklist_id REFERENCES task_checklists(id) ON DELETE CASCADE（業務を削除するとコメントも削除）
 - user_id REFERENCES users(id) ON DELETE CASCADE
 
 ---
 
-## テーブル: bookmarks（ブックマーク：users と tasks の中間テーブル）
+## テーブル: bookmarks（ブックマーク：users と task_checklists の中間テーブル）
 
 | カラム名 | 型 | NULL | デフォルト | 説明 |
 |--------------|-------------|------|-----------|-------------------|
 | id | BIGINT | NO | AUTO | ブックマークID（PK） |
 | user_id | BIGINT | NO | - | ユーザーID（FK） |
-| task_id | BIGINT | NO | - | 業務ID（FK） |
+| task_checklist_id | BIGINT | NO | - | 業務ID（FK） |
 | created_at | TIMESTAMP | NO | CURRENT | 登録日時 |
 | updated_at | TIMESTAMP | NO | CURRENT | 更新日時 |
 
 【インデックス】
 - PRIMARY KEY (id)
-- UNIQUE KEY (user_id, task_id)
-- INDEX (task_id)
+- UNIQUE KEY (user_id, task_checklist_id)
+- INDEX (task_checklist_id)
 
 【外部キー】
 - user_id REFERENCES users(id) ON DELETE CASCADE
-- task_id REFERENCES tasks(id) ON DELETE CASCADE（業務を削除するとブックマークも削除）
+- task_checklist_id REFERENCES task_checklists(id) ON DELETE CASCADE（業務を削除するとブックマークも削除）
 
 【制約】
-- (user_id, task_id): UNIQUE制約（同じ業務を二重にブックマークできない）
+- (user_id, task_checklist_id): UNIQUE制約（同じ業務を二重にブックマークできない）
 
 ---
 

@@ -1,0 +1,33 @@
+FROM php:8.2-fpm
+
+# 必要なパッケージをインストール
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libwebp-dev \
+    libfreetype6-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    tzdata \
+ && ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
+ && echo "Asia/Tokyo" > /etc/timezone
+
+# PHP拡張機能をインストール
+# GD は JPEG・WebP（画像アップロード F-09 で扱う形式）とフォントに対応させてビルドする
+RUN docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype \
+ && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+
+# Composerをインストール
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# 作業ディレクトリ
+WORKDIR /var/www/html
+
+# 権限設定
+RUN chown -R www-data:www-data /var/www/html
+
+RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
