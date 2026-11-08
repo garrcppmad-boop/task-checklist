@@ -73,15 +73,15 @@
 
 | コントローラー | 担当 |
 |---|---|
-| TaskController | 業務の一覧・自分の一覧・作成・詳細・編集・削除、検索・絞り込み |
-| TaskStatusController | ステータスの Ajax 更新（Could） |
+| TaskChecklistController | 業務の一覧・自分の一覧・作成・詳細・編集・削除、検索・絞り込み |
+| TaskChecklistStatusController | ステータスの Ajax 更新（Could） |
 | CommentController | コメントの投稿・削除 |
 | BookmarkController | ブックマークの登録・解除（Ajax）、ブックマーク一覧 |
 | ProfileController | プロフィール（Breeze） |
 
 | Policy | 判定すること |
 |---|---|
-| TaskPolicy | 閲覧：同じチームの業務だけ／編集・削除：投稿者だけ |
+| TaskChecklistPolicy | 閲覧：同じチームの業務だけ／編集・削除：投稿者だけ |
 | CommentPolicy | 削除：自分のコメントだけ |
 
 ---
@@ -90,17 +90,17 @@
 
 ```
 teams (1) ----< (N) users
-users (1) ----< (N) tasks
+users (1) ----< (N) task_checklists
 users (1) ----< (N) comments
-tasks (1) ----< (N) comments
-users (N) >----< (N) tasks  [bookmarks: 中間テーブル]
+task_checklists (1) ----< (N) comments
+users (N) >----< (N) task_checklists  [bookmarks: 中間テーブル]
 ```
 
 | テーブル | 内容 |
 |---|---|
 | teams | チーム（Seeder であらかじめ登録） |
 | users | ユーザー（所属チームを1つ持つ） |
-| tasks | 業務（タイトル・説明・画像・期限・ステータス） |
+| task_checklists | 業務（タイトル・説明・画像・期限・ステータス） |
 | comments | 業務へのコメント |
 | bookmarks | ブックマーク（ユーザーと業務の組み合わせは重複不可） |
 
@@ -114,12 +114,12 @@ users (N) >----< (N) tasks  [bookmarks: 中間テーブル]
 | 2 | 会員登録 | `/register` | Breeze に所属チームの選択を追加 |
 | 3 | ログイン | `/login` | Breeze |
 | 4 | パスワードリセット | `/forgot-password` | Breeze |
-| 5 | チームの業務一覧 | `/tasks` | ログイン後のホーム。検索・絞り込み・色分け・ブックマーク |
-| 6 | 自分の業務一覧 | `/tasks/mine` | |
+| 5 | チームの業務一覧 | `/task-checklists` | ログイン後のホーム。検索・絞り込み・色分け・ブックマーク |
+| 6 | 自分の業務一覧 | `/task-checklists/mine` | |
 | 7 | ブックマーク一覧 | `/bookmarks` | |
-| 8 | 業務の新規投稿 | `/tasks/create` | 画像アップロード |
-| 9 | 業務の詳細 | `/tasks/{task}` | コメント投稿・ブックマーク |
-| 10 | 業務の編集 | `/tasks/{task}/edit` | 投稿者のみ |
+| 8 | 業務の新規投稿 | `/task-checklists/create` | 画像アップロード |
+| 9 | 業務の詳細 | `/task-checklists/{task_checklist}` | コメント投稿・ブックマーク |
+| 10 | 業務の編集 | `/task-checklists/{task_checklist}/edit` | 投稿者のみ |
 | 11 | プロフィール | `/profile` | Breeze |
 
 ---
@@ -167,7 +167,7 @@ Week 20 までの未決事項を、次のように決めた。
 
 | No | 内容 | 決定 | 理由 | 関係する設計 |
 |---|---|---|---|---|
-| 1 | 他のチームの業務も見られるようにするか | **同じチームだけ**（今の設計のまま） | 他チームに見せたくない情報（取引先名など）があり、権限もシンプルに保てる | ルーティング（権限）、TaskPolicy |
+| 1 | 他のチームの業務も見られるようにするか | **同じチームだけ**（今の設計のまま） | 他チームに見せたくない情報（取引先名など）があり、権限もシンプルに保てる | ルーティング（権限）、TaskChecklistPolicy |
 | 2 | 削除した業務をあとで戻せるようにするか | **戻せない（物理削除）** | 削除前に確認ダイアログを出すので誤操作は防げる。論理削除は検索・一覧の条件が増え、3週間の範囲を超える | DB 設計（`deleted_at` は追加しない） |
 | 3 | 2MB を超えるスマホの写真の扱い | **上限は 2MB のまま** | 縮小処理はライブラリの追加が必要。超えたときはエラーメッセージで小さい画像を選ぶよう案内する | 画像アップロード |
 | 4 | 公開環境の MySQL をどこに用意するか | **Render 上に Private Service として立てる** | アプリと同じ Render 内で通信でき、構成図どおり1か所で管理できる。データはディスクに保存する | インフラ構成 |

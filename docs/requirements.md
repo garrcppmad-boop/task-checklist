@@ -146,7 +146,7 @@ Must の機能のうち、**Week 22〜23 の2スプリントで動く状態に�
 |---|---|
 | ログイン・ログアウト（Breeze） | F-01〜F-03 会員登録・認証 |
 | 主要なデータのCRUD | F-04〜F-08 業務の作成・一覧・詳細・編集・削除 |
-| 自分のデータだけ編集・削除できる権限管理（Policy） | F-15 投稿者だけが編集・削除できる（TaskPolicy） |
+| 自分のデータだけ編集・削除できる権限管理（Policy） | F-15 投稿者だけが編集・削除できる（TaskChecklistPolicy） |
 | 検索または絞り込み | F-11 キーワード検索、F-12 期限・ステータスでの絞り込み |
 | 画像アップロード | F-09 業務への画像添付（ローカル保存、S3は発展） |
 | ページを再読み込みしない操作（Ajax） | F-14 ブックマークの登録・解除 |
@@ -214,9 +214,9 @@ Must の機能のうち、**Week 22〜23 の2スプリントで動く状態に�
 |---|---|
 | teams | id, name |
 | users | id, team_id, name, email, password |
-| tasks | id, user_id, title, description, image_path, due_date, status（未着手 / 進行中 / 完了）, created_at, updated_at |
-| comments | id, task_id, user_id, body, created_at |
-| bookmarks | id, user_id, task_id（user_id と task_id の組み合わせは重複不可） |
+| task_checklists | id, user_id, title, description, image_path, due_date, status（未着手 / 進行中 / 完了）, created_at, updated_at |
+| comments | id, task_checklist_id, user_id, body, created_at |
+| bookmarks | id, user_id, task_checklist_id（user_id と task_checklist_id の組み合わせは重複不可） |
 
 **リレーション**
 - チーム 1 : N ユーザー
@@ -317,12 +317,12 @@ Must の機能のうち、**Week 22〜23 の2スプリントで動く状態に�
 | 2 | 会員登録 | `/register` | 不要 | Breeze |
 | 3 | ログイン | `/login` | 不要 | Breeze |
 | 4 | パスワードリセット | `/forgot-password` | 不要 | Breeze |
-| 5 | チームの業務一覧 | `/tasks` | 必要 | 検索・絞り込み・ブックマーク |
-| 6 | 自分の業務一覧 | `/tasks/mine` | 必要 | |
+| 5 | チームの業務一覧 | `/task-checklists` | 必要 | 検索・絞り込み・ブックマーク |
+| 6 | 自分の業務一覧 | `/task-checklists/mine` | 必要 | |
 | 7 | ブックマーク一覧 | `/bookmarks` | 必要 | |
-| 8 | 業務の新規投稿 | `/tasks/create` | 必要 | 画像アップロード |
-| 9 | 業務の詳細 | `/tasks/{id}` | 必要 | コメント投稿 |
-| 10 | 業務の編集 | `/tasks/{id}/edit` | 必要 | 投稿者のみ（Policy） |
+| 8 | 業務の新規投稿 | `/task-checklists/create` | 必要 | 画像アップロード |
+| 9 | 業務の詳細 | `/task-checklists/{task_checklist}` | 必要 | コメント投稿 |
+| 10 | 業務の編集 | `/task-checklists/{task_checklist}/edit` | 必要 | 投稿者のみ（Policy） |
 | 11 | プロフィール | `/profile` | 必要 | Breeze |
 
 ---

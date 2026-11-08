@@ -7,29 +7,29 @@
 | 画面・操作 | メソッド | URL | ルート名 | コントローラー@アクション | ログイン | 権限（Policy） |
 |--------------------|-----------|-----------------------|----------------|---------------------------|----------|------------------|
 | トップページ | GET | / | home | （クロージャ） | 不要 | - |
-| チームの業務一覧（検索・絞り込み） | GET | /tasks?keyword=...&filter=... | tasks.index | TaskController@index | 必要 | - |
-| 自分の業務一覧 | GET | /tasks/mine | tasks.mine | TaskController@mine | 必要 | - |
-| 業務の作成フォーム | GET | /tasks/create | tasks.create | TaskController@create | 必要 | - |
-| 業務の保存 | POST | /tasks | tasks.store | TaskController@store | 必要 | - |
-| 業務の詳細 | GET | /tasks/{task} | tasks.show | TaskController@show | 必要 | 同じチームの業務だけ |
-| 業務の編集フォーム | GET | /tasks/{task}/edit | tasks.edit | TaskController@edit | 必要 | 自分の投稿だけ |
-| 業務の更新 | PUT | /tasks/{task} | tasks.update | TaskController@update | 必要 | 自分の投稿だけ |
-| 業務の削除 | DELETE | /tasks/{task} | tasks.destroy | TaskController@destroy | 必要 | 自分の投稿だけ |
-| ステータスの更新（Ajax） | PATCH | /tasks/{task}/status | tasks.status | TaskStatusController@update | 必要 | 自分の投稿だけ |
-| コメントの投稿 | POST | /tasks/{task}/comments | tasks.comments.store | CommentController@store | 必要 | 同じチームの業務だけ |
+| チームの業務一覧（検索・絞り込み） | GET | /task-checklists?keyword=...&filter=... | task-checklists.index | TaskChecklistController@index | 必要 | - |
+| 自分の業務一覧 | GET | /task-checklists/mine | task-checklists.mine | TaskChecklistController@mine | 必要 | - |
+| 業務の作成フォーム | GET | /task-checklists/create | task-checklists.create | TaskChecklistController@create | 必要 | - |
+| 業務の保存 | POST | /task-checklists | task-checklists.store | TaskChecklistController@store | 必要 | - |
+| 業務の詳細 | GET | /task-checklists/{task_checklist} | task-checklists.show | TaskChecklistController@show | 必要 | 同じチームの業務だけ |
+| 業務の編集フォーム | GET | /task-checklists/{task_checklist}/edit | task-checklists.edit | TaskChecklistController@edit | 必要 | 自分の投稿だけ |
+| 業務の更新 | PUT | /task-checklists/{task_checklist} | task-checklists.update | TaskChecklistController@update | 必要 | 自分の投稿だけ |
+| 業務の削除 | DELETE | /task-checklists/{task_checklist} | task-checklists.destroy | TaskChecklistController@destroy | 必要 | 自分の投稿だけ |
+| ステータスの更新（Ajax） | PATCH | /task-checklists/{task_checklist}/status | task-checklists.status | TaskChecklistStatusController@update | 必要 | 自分の投稿だけ |
+| コメントの投稿 | POST | /task-checklists/{task_checklist}/comments | task-checklists.comments.store | CommentController@store | 必要 | 同じチームの業務だけ |
 | コメントの削除 | DELETE | /comments/{comment} | comments.destroy | CommentController@destroy | 必要 | 自分のコメントだけ |
-| ブックマーク（Ajax） | POST | /tasks/{task}/bookmark | tasks.bookmark | BookmarkController@toggle | 必要 | 同じチームの業務だけ |
+| ブックマーク（Ajax） | POST | /task-checklists/{task_checklist}/bookmark | task-checklists.bookmark | BookmarkController@toggle | 必要 | 同じチームの業務だけ |
 | ブックマーク一覧 | GET | /bookmarks | bookmarks.index | BookmarkController@index | 必要 | - |
 | プロフィール編集 | GET | /profile | profile.edit | ProfileController@edit | 必要 | - |
 | プロフィールの更新 | PATCH | /profile | profile.update | ProfileController@update | 必要 | - |
 | アカウントの削除 | DELETE | /profile | profile.destroy | ProfileController@destroy | 必要 | - |
 
 ※ ログイン・ログアウト・会員登録・パスワードリセットの画面は Breeze が作るルート（`routes/auth.php`）を使う。会員登録には所属チームの選択を追加する（F-01）
-※ トップページ（`/`）は、ログイン済みならチームの業務一覧（`/tasks`）へ、未ログインならログイン画面へリダイレクトする
+※ トップページ（`/`）は、ログイン済みならチームの業務一覧（`/task-checklists`）へ、未ログインならログイン画面へリダイレクトする
 ※ ステータスの更新（Ajax）とブックマーク（Ajax）は画面を返さず、JSON を返す
 　（ステータス：変更後のステータスと表示用の色・マーク／ブックマーク：登録されているかどうか）
-※ 「同じチームの業務だけ」：他のチームの業務を開いたり、コメント・ブックマークしようとすると 403 にする（`TaskPolicy@view`）
-※ 「自分の投稿だけ」は `TaskPolicy@update` / `TaskPolicy@delete`、「自分のコメントだけ」は `CommentPolicy@delete` で判定する
+※ 「同じチームの業務だけ」：他のチームの業務を開いたり、コメント・ブックマークしようとすると 403 にする（`TaskChecklistPolicy@view`）
+※ 「自分の投稿だけ」は `TaskChecklistPolicy@update` / `TaskChecklistPolicy@delete`、「自分のコメントだけ」は `CommentPolicy@delete` で判定する
 
 ## 要件定義書との対応
 
@@ -48,7 +48,7 @@
 | ブックマーク一覧 | F-16 | Should | 7 |
 | プロフィール | ― | ― | 11 |
 
-## 検索・絞り込みのパラメータ（`GET /tasks`）
+## 検索・絞り込みのパラメータ（`GET /task-checklists`）
 
 | パラメータ | 値 | 内容 |
 |---|---|---|
@@ -58,25 +58,25 @@
 | status | `todo` / `doing` / `done` | 未着手 / 進行中 / 完了（F-12） |
 | page | 数字 | ページ番号（1ページ20件） |
 
-例：`/tasks?keyword=見積&filter=due_soon&status=doing`
+例：`/task-checklists?keyword=見積&filter=due_soon&status=doing`
 
 ## routes/web.php のイメージ
 
 ```php
-Route::get('/', fn () => redirect()->route(auth()->check() ? 'tasks.index' : 'login'))->name('home');
+Route::get('/', fn () => redirect()->route(auth()->check() ? 'task-checklists.index' : 'login'))->name('home');
 
 Route::middleware('auth')->group(function () {
-    // 業務（/tasks/mine は /tasks/{task} より前に書く）
-    Route::get('/tasks/mine', [TaskController::class, 'mine'])->name('tasks.mine');
-    Route::resource('tasks', TaskController::class);
-    Route::patch('/tasks/{task}/status', [TaskStatusController::class, 'update'])->name('tasks.status');
+    // 業務（/task-checklists/mine は /task-checklists/{task_checklist} より前に書く）
+    Route::get('/task-checklists/mine', [TaskChecklistController::class, 'mine'])->name('task-checklists.mine');
+    Route::resource('task-checklists', TaskChecklistController::class);
+    Route::patch('/task-checklists/{task_checklist}/status', [TaskChecklistStatusController::class, 'update'])->name('task-checklists.status');
 
     // コメント
-    Route::post('/tasks/{task}/comments', [CommentController::class, 'store'])->name('tasks.comments.store');
+    Route::post('/task-checklists/{task_checklist}/comments', [CommentController::class, 'store'])->name('task-checklists.comments.store');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
 
     // ブックマーク
-    Route::post('/tasks/{task}/bookmark', [BookmarkController::class, 'toggle'])->name('tasks.bookmark');
+    Route::post('/task-checklists/{task_checklist}/bookmark', [BookmarkController::class, 'toggle'])->name('task-checklists.bookmark');
     Route::get('/bookmarks', [BookmarkController::class, 'index'])->name('bookmarks.index');
 
     // プロフィール（Breeze）
@@ -88,6 +88,6 @@ Route::middleware('auth')->group(function () {
 require __DIR__.'/auth.php';
 ```
 
-**ルートを書く順番の注意**：`/tasks/mine` を `Route::resource('tasks', ...)` より後に書くと、
-`mine` が `/tasks/{task}` の `{task}` として扱われ、「mine という ID の業務」を探して 404 になる。
-固定の URL（`/tasks/mine`・`/tasks/create`）は、`{task}` を含むルートより前に書く。
+**ルートを書く順番の注意**：`/task-checklists/mine` を `Route::resource('task-checklists', ...)` より後に書くと、
+`mine` が `/task-checklists/{task_checklist}` の `{task_checklist}` として扱われ、「mine という ID の業務」を探して 404 になる。
+固定の URL（`/task-checklists/mine`・`/task-checklists/create`）は、`{task_checklist}` を含むルートより前に書く。

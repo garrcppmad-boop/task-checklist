@@ -52,7 +52,7 @@ flowchart LR
 ### 画像をアップロードするとき
 1. 業務の投稿・編集画面から画像を送る
 2. Laravel がバリデーション（jpg / png / webp、2MB まで）をする
-3. Persistent Disk に保存し、保存先のパスを MySQL の `tasks.image_path` に記録する
+3. Persistent Disk に保存し、保存先のパスを MySQL の `task_checklists.image_path` に記録する
 
 ### デプロイするとき
 1. 機能ごとのブランチで開発し、PR を `main` にマージする
