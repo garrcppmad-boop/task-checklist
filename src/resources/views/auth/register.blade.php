@@ -16,6 +16,19 @@
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
+        <!-- 所属チーム（F-01）：Seeder で用意したチームから1つ選ぶ -->
+        <div class="mt-4">
+            <x-input-label for="team_id" value="所属チーム" />
+            <select id="team_id" name="team_id" required
+                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                <option value="" disabled @selected(old('team_id') === null)>選択してください</option>
+                @foreach ($teams as $team)
+                    <option value="{{ $team->id }}" @selected((string) old('team_id') === (string) $team->id)>{{ $team->name }}</option>
+                @endforeach
+            </select>
+            <x-input-error :messages="$errors->get('team_id')" class="mt-2" />
+        </div>
+
         <!-- Password -->
         <div class="mt-4">
             <x-input-label for="password" :value="__('Password')" />

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Comment extends Model
 {
+    use HasFactory;
+
     // task_checklist_id・user_id はフォームから受け取らず、コントローラーで設定する
     protected $fillable = [
         'body',
