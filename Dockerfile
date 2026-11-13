@@ -129,9 +129,11 @@ EXPOSE 10000
 
 # 変更（3）: 起動時にマイグレーションを実行してから、Render が渡すポート（環境変数 PORT）で待ち受ける
 #   - migrate --force   : 本番（APP_ENV=production）では確認を聞かれるため --force で自動実行する
+#   - db:seed --force   : 会員登録で選ぶチームを作る（F-01）。本番では TeamSeeder だけが動き、
+#                         firstOrCreate なので毎回実行しても重複しない（デモデータは APP_ENV=local のときだけ）
 #   - storage:link      : 添付画像を /storage/... で表示するためのリンク（public/storage）を作る
 #   - --host=0.0.0.0    : コンテナの外からのアクセスを受け付ける
 #   - ${PORT:-10000}    : Render が渡すポート番号。なければ 10000
 #   - exec              : serve を PID 1 にして、Render の停止シグナルを直接受け取れるようにする
 # php artisan serve は開発用サーバー。長期運用するなら Nginx + PHP-FPM などへの切り替えを検討する
-CMD ["sh", "-c", "php artisan migrate --force && php artisan storage:link && exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
+CMD ["sh", "-c", "php artisan migrate --force && php artisan db:seed --force && php artisan storage:link && exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
