@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Services\TaskChecklistImageService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** 業務（テーブル：task_checklists） */
 class TaskChecklist extends Model
 {
+    use HasFactory;
+
     /** ステータス（todo：未着手／doing：進行中／done：完了） */
     public const STATUSES = [
         'todo' => '未着手',
@@ -94,11 +97,12 @@ class TaskChecklist extends Model
     /** 期限間近：期限まで3日以内で未完了（F-12） */
     public function scopeDueSoon(Builder $query): void
     {
+        // 「3日後まで」を「4日後より前」で書く。
+        // SQLite（テスト）では due_date が '2026-11-16 00:00:00' の形で入るため、
+        // BETWEEN '…' AND '2026-11-16' だと3日後ちょうどが外れてしまう（MySQL の DATE 型では起きない）
         $query->where('status', '!=', 'done')
-            ->whereBetween('due_date', [
-                today()->toDateString(),
-                today()->addDays(self::DUE_SOON_DAYS)->toDateString(),
-            ]);
+            ->where('due_date', '>=', today()->toDateString())
+            ->where('due_date', '<', today()->addDays(self::DUE_SOON_DAYS + 1)->toDateString());
     }
 
     // ───────── 表示用 ─────────

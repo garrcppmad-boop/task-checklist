@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +21,9 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        return view('auth.register');
+        return view('auth.register', [
+            'teams' => Team::orderBy('name')->get(['id', 'name']),
+        ]);
     }
 
     /**
@@ -31,12 +34,17 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
+            // 所属チーム（F-01）：存在するチームだけ選べる
+            'team_id' => ['required', 'integer', 'exists:'.Team::class.',id'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ], [], [
+            'team_id' => '所属チーム',
         ]);
 
         $user = User::create([
+            'team_id' => $request->integer('team_id'),
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),

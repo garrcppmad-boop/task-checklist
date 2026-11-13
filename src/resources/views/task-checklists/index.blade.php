@@ -23,7 +23,7 @@
                   class="mb-4 flex flex-wrap items-end gap-3 rounded-lg bg-white p-4 shadow-sm">
                 <div class="flex-1 min-w-[12rem]">
                     <label for="keyword" class="block text-xs font-medium text-gray-600">キーワード</label>
-                    <input type="search" id="keyword" name="keyword" value="{{ request('keyword') }}"
+                    <input type="search" id="keyword" name="keyword" value="{{ $keyword }}"
                            placeholder="タイトル・説明で検索"
                            class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 </div>
@@ -32,8 +32,8 @@
                     <select id="filter" name="filter"
                             class="mt-1 block rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         <option value="">すべて</option>
-                        <option value="overdue" @selected(request('filter') === 'overdue')>期限切れ</option>
-                        <option value="due_soon" @selected(request('filter') === 'due_soon')>期限間近（{{ \App\Models\TaskChecklist::DUE_SOON_DAYS }}日以内）</option>
+                        <option value="overdue" @selected($filter === 'overdue')>期限切れ</option>
+                        <option value="due_soon" @selected($filter === 'due_soon')>期限間近（{{ \App\Models\TaskChecklist::DUE_SOON_DAYS }}日以内）</option>
                     </select>
                 </div>
                 <div>
@@ -42,7 +42,7 @@
                             class="mt-1 block rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         <option value="">すべて</option>
                         @foreach ($statuses as $value => $label)
-                            <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
+                            <option value="{{ $value }}" @selected($status === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
                 </div>

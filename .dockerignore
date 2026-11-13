@@ -1,0 +1,50 @@
+# 「すべて除外 → 必要なものだけ許可」する方式（allowlist）
+#
+# Week 16（month2/laravel-docker-app/.dockerignore）をもとにしている。
+# 変更: Laravel は src/ に置いているため、許可するパスに src/ を付けた。
+#
+# 除外したいものを列挙する方式だと、リポジトリ内にフォルダ（docs/ など）が増えたときに、
+# その中の .env などが気付かないうちにイメージへ入ってしまう。
+# この方式なら、ここで許可したもの以外は一切ビルドに使われない。
+#
+# ※ ローカル開発の docker-compose（docker/php/Dockerfile）もこのファイルを読むが、
+#   あちらはソースを COPY せずボリュームでマウントしているので影響はない。
+
+# まず全部除外
+*
+
+# アプリの実行に必要なもの
+!src/app/
+!src/bootstrap/
+!src/config/
+!src/database/
+!src/public/
+!src/resources/
+!src/routes/
+!src/storage/
+!src/artisan
+
+# 依存パッケージの定義（中身はイメージ内でインストールする）
+!src/composer.json
+!src/composer.lock
+!src/package.json
+!src/package-lock.json
+!src/vite.config.js
+!src/postcss.config.js
+!src/tailwind.config.js
+
+# 許可したフォルダの中でも、生成物・キャッシュ・秘密情報は除外
+**/.env
+**/.env.*
+**/.claude
+**/.DS_Store
+src/bootstrap/cache/*.php
+src/public/build
+src/public/hot
+src/public/storage
+src/storage/app/**
+src/storage/framework/cache/**
+src/storage/framework/sessions/**
+src/storage/framework/views/**
+src/storage/logs/**
+src/database/*.sqlite
