@@ -18,8 +18,8 @@ class TaskChecklistFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'title' => fake()->realText(30),
-            'description' => fake()->optional()->realText(120),
+            'title' => fake()->words(3, true),
+            'description' => fake()->optional()->paragraph(),
             'due_date' => today()->addDays(fake()->numberBetween(TaskChecklist::DUE_SOON_DAYS + 1, 30)),
             'status' => fake()->randomElement(['todo', 'doing']),
         ];

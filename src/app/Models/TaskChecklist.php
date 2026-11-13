@@ -97,11 +97,12 @@ class TaskChecklist extends Model
     /** 期限間近：期限まで3日以内で未完了（F-12） */
     public function scopeDueSoon(Builder $query): void
     {
+        // 「3日後まで」を「4日後より前」で書く。
+        // SQLite（テスト）では due_date が '2026-11-16 00:00:00' の形で入るため、
+        // BETWEEN '…' AND '2026-11-16' だと3日後ちょうどが外れてしまう（MySQL の DATE 型では起きない）
         $query->where('status', '!=', 'done')
-            ->whereBetween('due_date', [
-                today()->toDateString(),
-                today()->addDays(self::DUE_SOON_DAYS)->toDateString(),
-            ]);
+            ->where('due_date', '>=', today()->toDateString())
+            ->where('due_date', '<', today()->addDays(self::DUE_SOON_DAYS + 1)->toDateString());
     }
 
     // ───────── 表示用 ─────────

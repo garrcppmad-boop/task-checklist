@@ -17,7 +17,7 @@ class CommentFactory extends Factory
         return [
             'task_checklist_id' => TaskChecklist::factory(),
             'user_id' => User::factory(),
-            'body' => fake()->realText(60),
+            'body' => fake()->sentence(),
         ];
     }
 }

@@ -29,14 +29,19 @@ class TaskChecklistController extends Controller
     {
         $user = $request->user();
 
+        // ?keyword[]=a のように配列で送られても 500 エラーにならないよう、文字列だけを受け付ける
+        $keyword = $this->stringQuery($request, 'keyword');
+        $filter = $this->stringQuery($request, 'filter');
+        $status = $this->stringQuery($request, 'status');
+
         $query = TaskChecklist::query()
             ->forTeam($user->team_id)
-            ->search($request->query('keyword'))
-            ->when($request->query('filter') === 'overdue', fn (Builder $q) => $q->overdue())
-            ->when($request->query('filter') === 'due_soon', fn (Builder $q) => $q->dueSoon())
+            ->search($keyword)
+            ->when($filter === 'overdue', fn (Builder $q) => $q->overdue())
+            ->when($filter === 'due_soon', fn (Builder $q) => $q->dueSoon())
             ->when(
-                array_key_exists((string) $request->query('status'), TaskChecklist::STATUSES),
-                fn (Builder $q) => $q->where('status', $request->query('status'))
+                array_key_exists((string) $status, TaskChecklist::STATUSES),
+                fn (Builder $q) => $q->where('status', $status)
             );
 
         $taskChecklists = $this->paginateForList($query, $user->id);
@@ -44,6 +49,9 @@ class TaskChecklistController extends Controller
         return view('task-checklists.index', [
             'taskChecklists' => $taskChecklists,
             'statuses' => TaskChecklist::STATUSES,
+            'keyword' => $keyword,
+            'filter' => $filter,
+            'status' => $status,
         ]);
     }
 
@@ -169,6 +177,14 @@ class TaskChecklistController extends Controller
         // 削除後は自分の業務一覧へ（要件定義書「画面遷移図」）
         return redirect()->route('task-checklists.mine')
             ->with('success', '業務を削除しました。');
+    }
+
+    /** クエリ文字列の値を取り出す（文字列でなければ null） */
+    private function stringQuery(Request $request, string $key): ?string
+    {
+        $value = $request->query($key);
+
+        return is_string($value) ? $value : null;
     }
 
     /**

@@ -11,7 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // 追加: Render のプロキシを信頼する
+        // Render は HTTPS を受けてから HTTP でコンテナに転送するため、X-Forwarded-Proto などの
+        // ヘッダーを信頼しないと、Laravel が作る CSS・JS などの URL が http:// になってしまう
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
