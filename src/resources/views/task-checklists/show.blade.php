@@ -14,14 +14,11 @@
                         {{ $taskChecklist->title }}
                     </h1>
 
-                    {{-- ブックマーク（F-14）：Ajax の処理はブックマーク機能の実装時に追加する --}}
-                    <button type="button" disabled
-                            data-bookmark-id="{{ $taskChecklist->id }}"
-                            aria-pressed="{{ $isBookmarked ? 'true' : 'false' }}"
-                            class="whitespace-nowrap rounded-full border px-3 py-1 text-sm
-                                   {{ $isBookmarked ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-gray-300 bg-white text-gray-600' }}">
-                        {{ $isBookmarked ? '★ ブックマーク済み' : '☆ ブックマーク' }}
-                    </button>
+                    {{-- ブックマーク（F-14・Ajax） --}}
+                    @include('task-checklists.partials.bookmark-button', [
+                        'taskChecklist' => $taskChecklist,
+                        'isBookmarked' => $isBookmarked,
+                    ])
                 </div>
 
                 <dl class="mt-4 grid grid-cols-[6rem_1fr] gap-x-4 gap-y-2 text-sm">

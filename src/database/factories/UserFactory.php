@@ -26,6 +26,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            // 所属チーム（必須）。指定しなければ新しいチームを作る
             'team_id' => Team::factory(),
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),

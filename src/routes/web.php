@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TaskChecklistController;
 use Illuminate\Support\Facades\Route;
@@ -17,6 +18,10 @@ Route::middleware('auth')->group(function () {
     // 業務（/task-checklists/mine は /task-checklists/{task_checklist} より前に書く）
     Route::get('/task-checklists/mine', [TaskChecklistController::class, 'mine'])->name('task-checklists.mine');
     Route::resource('task-checklists', TaskChecklistController::class);
+
+    // ブックマークの登録・解除（F-14・Ajax）：JSON を返す
+    Route::post('/task-checklists/{task_checklist}/bookmark', [BookmarkController::class, 'toggle'])
+        ->name('task-checklists.bookmark');
 
     // プロフィール（Breeze）
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

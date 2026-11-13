@@ -27,6 +27,7 @@ class PaginationTest extends TestCase
             TaskChecklist::factory()->for($this->user)->create([
                 'title' => sprintf('業務%02d', $i),
                 'due_date' => today()->addDays($i),
+                'status' => 'todo',
             ]);
         }
     }

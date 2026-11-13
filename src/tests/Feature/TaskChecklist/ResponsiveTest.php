@@ -46,14 +46,15 @@ class ResponsiveTest extends TestCase
             ->assertSee('<meta name="viewport" content="width=device-width, initial-scale=1">', false);
     }
 
-    public function test_list_item_stacks_vertically_on_mobile(): void
+    public function test_card_grid_changes_columns_by_screen_width(): void
     {
         $user = User::factory()->create();
         TaskChecklist::factory()->for($user)->create();
 
-        // スマホでは縦並び（flex-col）、sm 以上で横並び（sm:flex-row）
+        // スマホは1列、タブレット（sm）は2列、PC（lg）は3列のカード表示
         $this->actingAs($user)->get(route('task-checklists.index'))
-            ->assertSee('flex-col', false)
-            ->assertSee('sm:flex-row', false);
+            ->assertSee('grid-cols-1', false)
+            ->assertSee('sm:grid-cols-2', false)
+            ->assertSee('lg:grid-cols-3', false);
     }
 }

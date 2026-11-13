@@ -9,24 +9,24 @@
             <x-input-error :messages="$errors->get('name')" class="mt-2" />
         </div>
 
-        <!-- 所属チーム（F-01） -->
-        <div class="mt-4">
-            <x-input-label for="team_id" value="所属チーム" />
-            <select id="team_id" name="team_id" required
-                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                <option value="">選んでください</option>
-                @foreach ($teams as $team)
-                    <option value="{{ $team->id }}" @selected((string) old('team_id') === (string) $team->id)>{{ $team->name }}</option>
-                @endforeach
-            </select>
-            <x-input-error :messages="$errors->get('team_id')" class="mt-2" />
-        </div>
-
         <!-- Email Address -->
         <div class="mt-4">
             <x-input-label for="email" :value="__('Email')" />
             <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        </div>
+
+        <!-- 所属チーム（F-01）：Seeder で用意したチームから1つ選ぶ -->
+        <div class="mt-4">
+            <x-input-label for="team_id" value="所属チーム" />
+            <select id="team_id" name="team_id" required
+                    class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                <option value="" disabled @selected(old('team_id') === null)>選択してください</option>
+                @foreach ($teams as $team)
+                    <option value="{{ $team->id }}" @selected((string) old('team_id') === (string) $team->id)>{{ $team->name }}</option>
+                @endforeach
+            </select>
+            <x-input-error :messages="$errors->get('team_id')" class="mt-2" />
         </div>
 
         <!-- Password -->

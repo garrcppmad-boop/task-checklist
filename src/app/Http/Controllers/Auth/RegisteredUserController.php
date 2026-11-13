@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -17,12 +18,12 @@ use Illuminate\View\View;
 class RegisteredUserController extends Controller
 {
     /**
-     * Display the registration view.
+     * 会員登録フォーム（F-01）：所属チームを選べるよう、チームの一覧を渡す
      */
     public function create(): View
     {
         return view('auth.register', [
-            'teams' => Team::orderBy('name')->get(['id', 'name']),
+            'teams' => Team::orderBy('id')->get(['id', 'name']),
         ]);
     }
 
@@ -34,11 +35,11 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            // 所属チーム（F-01）：存在するチームだけ選べる
-            'team_id' => ['required', 'integer', 'exists:'.Team::class.',id'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            // 所属チーム（F-01）：Seeder で用意したチームから1つ選ぶ
+            'team_id' => ['required', 'integer', Rule::exists(Team::class, 'id')],
         ], [], [
             'team_id' => '所属チーム',
         ]);

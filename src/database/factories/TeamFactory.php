@@ -13,8 +13,8 @@ class TeamFactory extends Factory
     public function definition(): array
     {
         return [
-            // teams.name は unique・50文字まで
-            'name' => fake()->unique()->bothify('チーム-####'),
+            // teams.name は重複できないので、番号を付けて重ならないようにする
+            'name' => 'テストチーム'.fake()->unique()->numberBetween(1, 999999),
         ];
     }
 }

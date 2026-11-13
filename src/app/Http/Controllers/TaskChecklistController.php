@@ -8,7 +8,6 @@ use App\Models\TaskChecklist;
 use App\Services\TaskChecklistImageService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Throwable;
 
 class TaskChecklistController extends Controller
@@ -105,7 +104,7 @@ class TaskChecklistController extends Controller
     /** 業務の詳細（F-07）：同じチームの業務だけ */
     public function show(Request $request, TaskChecklist $taskChecklist)
     {
-        Gate::authorize('view', $taskChecklist);
+        $this->authorize('view', $taskChecklist);
 
         $taskChecklist->load([
             'user',
@@ -125,7 +124,7 @@ class TaskChecklistController extends Controller
     /** 業務の編集フォーム（F-08）：投稿者だけ */
     public function edit(TaskChecklist $taskChecklist)
     {
-        Gate::authorize('update', $taskChecklist);
+        $this->authorize('update', $taskChecklist);
 
         return view('task-checklists.edit', [
             'taskChecklist' => $taskChecklist,
@@ -136,7 +135,7 @@ class TaskChecklistController extends Controller
     /** 業務の更新（F-08・F-09）：投稿者だけ */
     public function update(UpdateTaskChecklistRequest $request, TaskChecklist $taskChecklist)
     {
-        Gate::authorize('update', $taskChecklist);
+        $this->authorize('update', $taskChecklist);
 
         $data = $request->safe()->except('image');
 
@@ -166,7 +165,7 @@ class TaskChecklistController extends Controller
     /** 業務の削除（F-08）：投稿者だけ。コメント・ブックマークは外部キーの CASCADE で消える */
     public function destroy(TaskChecklist $taskChecklist)
     {
-        Gate::authorize('delete', $taskChecklist);
+        $this->authorize('delete', $taskChecklist);
 
         $imagePath = $taskChecklist->image_path;
 
@@ -175,7 +174,8 @@ class TaskChecklistController extends Controller
         // DB から消えてから画像を消す（削除に失敗したときに画像だけ消えないように）
         $this->images->delete($imagePath);
 
-        return redirect()->route('task-checklists.index')
+        // 削除後は自分の業務一覧へ（要件定義書「画面遷移図」）
+        return redirect()->route('task-checklists.mine')
             ->with('success', '業務を削除しました。');
     }
 

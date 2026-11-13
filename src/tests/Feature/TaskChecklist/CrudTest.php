@@ -162,7 +162,7 @@ class CrudTest extends TestCase
 
         $this->actingAs($user)
             ->delete(route('task-checklists.destroy', $task))
-            ->assertRedirect(route('task-checklists.index'))
+            ->assertRedirect(route('task-checklists.mine')) // 削除後は自分の業務一覧へ（画面遷移図）
             ->assertSessionHas('success');
 
         $this->assertModelMissing($task);
