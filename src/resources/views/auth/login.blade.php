@@ -44,4 +44,14 @@
             </x-primary-button>
         </div>
     </form>
+
+    {{-- 会員登録への入り口（F-01）：トップページ（/）はログイン画面に移動するため、ここにリンクを置く --}}
+    @if (Route::has('register'))
+        <p class="mt-6 border-t border-gray-200 pt-4 text-center text-sm text-gray-600">
+            アカウントをお持ちでない方は
+            <a href="{{ route('register') }}" class="font-semibold text-indigo-600 underline hover:text-indigo-500">
+                新規登録
+            </a>
+        </p>
+    @endif
 </x-guest-layout>

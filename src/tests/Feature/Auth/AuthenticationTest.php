@@ -17,6 +17,17 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
+    /** 未ログインでトップ（/）を開くとログイン画面になるので、そこから会員登録に進めること（F-01） */
+    public function test_login_screen_has_link_to_registration(): void
+    {
+        $this->get('/')->assertRedirect(route('login'));
+
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('href="'.route('register').'"', false)
+            ->assertSee('新規登録');
+    }
+
     public function test_users_can_authenticate_using_the_login_screen(): void
     {
         $user = User::factory()->create();
