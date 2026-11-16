@@ -137,6 +137,9 @@ docker compose exec app php artisan test
 ### 業務の投稿
 ![業務の投稿](screenshots/create.png)
 
+### スマホ表示（メニューを開いたところ）
+<img src="screenshots/mobile.png" alt="スマホ表示" width="400">
+
 ## 💡 工夫した点
 
 1. **セキュリティ対策**
